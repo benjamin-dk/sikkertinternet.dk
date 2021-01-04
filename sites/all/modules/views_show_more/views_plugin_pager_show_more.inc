@@ -52,6 +52,7 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
         'speed_type' => array('default' =>  ''),
         'speed' => array('default' => ''),
         'speed_value' => array('default' => ''),
+        'scroll_offset' => array('default' => '50'),
       ),
     );
     $options['advance'] = array(
@@ -80,10 +81,11 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
     $form['result_display_method'] = array(
       '#type' => 'select',
       '#title' => t('Result display method'),
-      '#description' => t('<strong>Append</strong> result display method append the new content after the existing content on the page in ajax mode and in no-ajax mode replace the content by page refresh. <strong>Replace</strong> result display method replace the content with new content both in ajax and no-ajax mode. In no-ajax mode it refresh the page.'),
+      '#description' => t('<strong>Append</strong> result display method appends the new content after the existing content on the page in ajax mode.<br/><strong>Replace</strong> result display method replace the content with new content, both in ajax and no-ajax mode.<br/><strong>Prepend</strong> will show results at the top of your existing content.<br/>In all cases, if views ajax is disabled then it will refresh the page and replace your content. i.e. works like normal pager.'),
       '#options' => array(
         'append' => t('Append'),
         'html' => t('Replace'),
+        'prepend' => t('Prepend'),
       ),
       '#default_value' => $this->options['result_display_method'] ? $this->options['result_display_method'] : 'append',
       '#weight' => 0,
@@ -138,6 +140,7 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
       '#input' => TRUE,
       '#weight' => 7,
     );
+
     $form['effects']['type'] = array(
       '#type' => 'select',
       '#options' => array(
@@ -150,6 +153,7 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
       '#title' => t('Animation Type'),
       '#default_value' => $this->options['effects']['type'],
     );
+
     $form['effects']['speed_type'] = array(
       '#type' => 'select',
       '#options' => array(
@@ -169,6 +173,7 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
       '#title' => t('Animation Speed'),
       '#default_value' => $this->options['effects']['speed_type'],
     );
+
     $form['effects']['speed_value'] = array(
       '#type' => 'textfield',
       '#title' => t('Animation speed in ms'),
@@ -181,40 +186,20 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
       '#element_validate' => array('element_validate_integer_positive'),
     );
 
-    // Pager style settings.
-    // $form['pager_style'] = array(
-    //   '#type' => 'fieldset',
-    //   '#collapsible' => TRUE,
-    //   '#collapsed' => TRUE,
-    //   '#tree' => TRUE,
-    //   '#title' => t('Pager style settings'),
-    //   '#input' => TRUE,
-    //   '#weight' => 9,
-    // );
-
-    // $element_options = array(
-    //   'div' => 'DIV',
-    //   'span' => 'SPAN',
-    //   'p' => 'P',
-    //   'strong' => 'STRONG',
-    //   'em' => 'EM',
-    // );
-    // $form['pager_style']['html'] = array(
-    //   '#type' => 'checkbox',
-    //   '#title' => t('Customize field HTML'),
-    // );
-    // $form['pager_style']['html_element'] = array(
-    //   '#type' => 'select',
-    //   '#title' => t('HTML element'),
-    //   '#description' => t('Choose the HTML element to wrap around this field, e.g. div, span, etc.'),
-    //   '#options' => $element_options,
-    //   '#attributes' => array('class' => array('dependent-options')),
-    //   '#states' => array(
-    //     'visible' => array(
-    //       '#edit-pager-options-pager-style-html' => array('checked' => TRUE),
-    //     ),
-    //   ),
-    // );
+     $form['effects']['scroll_offset'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Scroll Offset'),
+      '#states' => array(
+        'visible' => array(
+          '#edit-pager-options-effects-type' => array(
+            array('value' => 'scroll'),
+            array('value' => 'scroll_fade'),
+          ),
+        ),
+      ),
+      '#default_value' => $this->options['effects']['scroll_offset'],
+      '#element_validate' => array('element_validate_integer_positive'),
+    );
 
     // Advanced options, override default selectors.
     $form['advance'] = array(
@@ -226,6 +211,7 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
       '#input' => TRUE,
       '#weight' => 9,
     );
+
     // Option to specify the content_selector, which is the wrapping div for
     // views rows. This allows the JS to both find new rows on next pages and
     // know where to put them in the page.
@@ -235,6 +221,7 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
       '#description' => t('jQuery selector for the rows wrapper, relative to the view container. Use when you override the views markup. Views Show More pager requires a wrapping element for the rows.  Default <strong><code>&gt; .view-content</code></strong>.'),
       '#default_value' => $this->options['advance']['content_selector'],
     );
+
     // Option to specify the pager_selector, which is the pager relative to the
     // view container.
     $form['advance']['pager_selector'] = array(
@@ -287,6 +274,10 @@ class ViewsShowMorePlugin extends views_plugin_pager_full {
    * Render overwrite.
    */
   function render($input) {
+    if ($this->current_page > 0) {
+      $this->view->enable_pager_show_more = true;
+    }
+
     $pager_theme = views_theme_functions('pager_show_more', $this->view, $this->display);
     $output = theme($pager_theme, array(
       'parameters' => $input,
