@@ -70,7 +70,7 @@
       }
 
       // Get offset top for scroll.
-      var position_top = wrapper.find(content_query).offset().top + old_height - 50;
+      var position_top = wrapper.find(content_query).offset().top + old_height - response.scroll_offset;
 
       // Finally Scroll.
       $('html, body').animate({ scrollTop: position_top}, effect.showSpeed);
@@ -85,8 +85,16 @@
     wrapper.find(content_query)[method](new_content.find(content_query).children());
 
     // Re-class the loaded content.
-    wrapper.find(content_query).children()
-      .removeClass('views-row-first views-row-last views-row-odd views-row-even')
+    var childrens = wrapper.find(content_query).children();
+    if (childrens.hasClass('views-row-1')) {
+      childrens.each(function(index) {
+        $(this).removeClass(function(index, className) {
+          return (className.match(/(^|\s)views-row-\S+/g) || []).join(' ');
+        }).addClass('views-row-' + (index + 1));
+      });
+    }
+
+    childrens.removeClass('views-row-first views-row-last views-row-odd views-row-even')
       .filter(':first')
         .addClass('views-row-first')
         .end()
